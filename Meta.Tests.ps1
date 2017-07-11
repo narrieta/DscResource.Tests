@@ -471,14 +471,17 @@ Describe 'Common Tests - Validate Example Files' -Tag 'Examples' {
         {
             $powershellModulePath = Join-Path -Path (Get-PSModulePathItem -Item PSHome) -ChildPath $repoName
 
-            $items =  Get-ChildItem -Path $env:APPVEYOR_BUILD_FOLDER -Recurse | Where-Object -FilterScript {
-                $_.FullName -notmatch "node_modules"
-            } 
-            
-            $items | Copy-Item -Destination {
-                Join-Path -Path $powershellModulePath `
-                          -ChildPath $_.FullName.Substring($env:APPVEYOR_BUILD_FOLDER.length)
-            }
+            Write-Verbose -Message ('Copying module from ''{0}'' to ''{1}''' -f $moduleRootFilePath, $powershellModulePath) -Verbose
+
+            # Creates the destination module folder.
+            New-Item -Path $powershellModulePath -ItemType Directory -Force
+
+            # Copies all module files into the destination module folder.
+            Copy-Item -Path (Join-Path -Path $moduleRootFilePath -ChildPath '*') `
+                      -Destination $powershellModulePath `
+                      -Exclude @('node_modules','.*') `
+                      -Recurse `
+                      -Force
         }
 
         $exampleFile = Get-ChildItem -Path (Join-Path -Path $moduleRootFilePath -ChildPath 'Examples') -Filter '*.ps1' -Recurse
