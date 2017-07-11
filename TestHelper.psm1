@@ -928,6 +928,7 @@ function Get-CommandNameParameterValue
 <#
     .SYNOPSIS
         Returns the requested item in $env:PSModulePath
+            PSHome      - Requests the item under $PSHOME
             UserProfile - Requests the item under $env:USERPROFILE
         
         If multiple items are found, it returns the shortest item.
