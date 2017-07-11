@@ -719,7 +719,7 @@ function Import-PSScriptAnalyzer
     if ($null -eq $psScriptAnalyzerModule)
     {
         Write-Verbose -Message 'Installing PSScriptAnalyzer from the PowerShell Gallery'
-        $psScriptAnalyzerModulePath = "$env:userProfile\Documents\WindowsPowerShell\Modules\PSScriptAnalyzer"
+        $psScriptAnalyzerModulePath = "$(Get-PSModulePathItem -Item UserProfile)\PSScriptAnalyzer"
         Install-ModuleFromPowerShellGallery -ModuleName 'PSScriptAnalyzer' -DestinationPath $psScriptAnalyzerModulePath
     }
 
@@ -743,7 +743,7 @@ function Import-xDscResourceDesigner
     if ($null -eq $xDscResourceDesignerModule)
     {
         Write-Verbose -Message 'Installing xDscResourceDesigner from the PowerShell Gallery'
-        $xDscResourceDesignerModulePath = "$env:userProfile\Documents\WindowsPowerShell\Modules\xDscResourceDesigner"
+        $xDscResourceDesignerModulePath = "$(Get-PSModulePathItem -Item UserProfile)\xDscResourceDesigner"
         Install-ModuleFromPowerShellGallery -ModuleName 'xDscResourceDesigner' -DestinationPath $xDscResourceDesignerModulePath
     }
 
@@ -886,6 +886,38 @@ function Get-CommandNameParameterValue
     $commandArgumentNameValues = $commandStackItem.Arguments.TrimStart('{',' ').TrimEnd('}',' ') -split '\s*,\s*'
     $nameParameterValue = ($commandArgumentNameValues.Where{ $_ -like 'name=*'} -split '=')[-1]
     return $nameParameterValue
+}
+
+<#
+    .SYNOPSIS
+        Returns the requested item in $env:PSModulePath
+            UserProfile - Requests the item under $env:USERPROFILE
+        
+        If multiple items are found, it returns the shortest item.
+        If no items are found, it reports an error.
+#>
+function Get-PSModulePathItem {
+    param(
+        [Parameter(Mandatory)]
+        [ValidateSet('PSHome', 'UserProfile')]
+        [string] $Item
+    )
+
+    $itemParent = @{
+        PSHome = $PSHOME
+        UserProfile = $env:USERPROFILE
+    }
+
+    $userProfilePSModulePath = $env:PSModulePath.Split(';') | 
+        Where-Object { $_ -like "$($itemParent[$Item])\*" } |
+        Sort-Object -Property Length |
+        Select-Object -First 1
+
+    if (!$userProfilePSModulePath) {
+        Write-Error "Cannot find the requested item in the PowerShell module path.`n`$env:PSModulePath = $env:PSModulePath"
+    }
+
+    $userProfilePSModulePath
 }
 
 Export-ModuleMember -Function @(
