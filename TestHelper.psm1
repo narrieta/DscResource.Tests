@@ -756,7 +756,8 @@ function Import-PSScriptAnalyzer
     if ($null -eq $psScriptAnalyzerModule)
     {
         Write-Verbose -Message 'Installing PSScriptAnalyzer from the PowerShell Gallery'
-        $psScriptAnalyzerModulePath = "$(Get-PSModulePathItem -Item UserProfile)\PSScriptAnalyzer"
+        $userProfilePSModulePathItem = Get-UserProfilePSModulePathItem
+        $psScriptAnalyzerModulePath = Join-Path -Path userProfilePSModulePathItem -ChildPath PSScriptAnalyzer
         Install-ModuleFromPowerShellGallery -ModuleName 'PSScriptAnalyzer' -DestinationPath $psScriptAnalyzerModulePath
     }
 
@@ -780,7 +781,8 @@ function Import-xDscResourceDesigner
     if ($null -eq $xDscResourceDesignerModule)
     {
         Write-Verbose -Message 'Installing xDscResourceDesigner from the PowerShell Gallery'
-        $xDscResourceDesignerModulePath = "$(Get-PSModulePathItem -Item UserProfile)\xDscResourceDesigner"
+        $userProfilePSModulePathItem = Get-UserProfilePSModulePathItem
+        $xDscResourceDesignerModulePath = Join-Path -Path $userProfilePSModulePathItem -ChildPath xDscResourceDesigner
         Install-ModuleFromPowerShellGallery -ModuleName 'xDscResourceDesigner' -DestinationPath $xDscResourceDesignerModulePath
     }
 
@@ -927,35 +929,72 @@ function Get-CommandNameParameterValue
 
 <#
     .SYNOPSIS
-        Returns the requested item in $env:PSModulePath
-            PSHome      - Requests the item under $PSHOME
-            UserProfile - Requests the item under $env:USERPROFILE
-        
-        If multiple items are found, it returns the shortest item.
+        Returns first the item in $env:PSModulePath that matches the given Prefix ($env:PSModulePath is list of semicolon-separated items).
         If no items are found, it reports an error.
+    .PARAMS Prefix
+        Path prefix to look for.
+    .NOTES
+        If there are multiple matching items, the function returns the first item that occurs in the module path; this matches the lookup 
+        behavior of PowerSHell, which looks at the items in the module path in order of occurrence.
+    .EXAMPLE
+        If $env:PSModulePath is
+            C:\Program Files\WindowsPowerShell\Modules;C:\Users\foo\Documents\WindowsPowerShell\Modules;C:\Windows\system32\WindowsPowerShell\v1.0\Modules
+        then 
+            Get-PSModulePathItem C:\Users
+        will return 
+            C:\Users\foo\Documents\WindowsPowerShell\Modules
 #>
 function Get-PSModulePathItem {
     param(
-        [Parameter(Mandatory)]
-        [ValidateSet('PSHome', 'UserProfile')]
-        [string] $Item
+        [Parameter(Mandatory, Position = 0)]
+        [string] $Prefix
     )
 
-    $itemParent = @{
-        PSHome = $PSHOME
-        UserProfile = $env:USERPROFILE
-    }
-
-    $userProfilePSModulePath = $env:PSModulePath.Split(';') | 
-        Where-Object { $_ -like "$($itemParent[$Item])\*" } |
-        Sort-Object -Property Length |
+    $item = $env:PSModulePath.Split(';') | 
+        Where-Object -FilterScript { $_ -like "$Prefix*" } |
         Select-Object -First 1
 
-    if (!$userProfilePSModulePath) {
-        Write-Error "Cannot find the requested item in the PowerShell module path.`n`$env:PSModulePath = $env:PSModulePath"
+    if (!$item) {
+        Write-Error -Message "Cannot find the requested item in the PowerShell module path.`n`$env:PSModulePath = $env:PSModulePath"
     }
 
-    $userProfilePSModulePath
+    return $item
+}
+
+<#
+    .SYNOPSIS
+        Returns the first item in $env:PSModulePath that is a path under $env:USERPROFILE.
+        If no items are found, it reports an error.
+    .EXAMPLE
+        If $env:PSModulePath is
+            C:\Program Files\WindowsPowerShell\Modules;C:\Users\foo\Documents\WindowsPowerShell\Modules;C:\Windows\system32\WindowsPowerShell\v1.0\Modules
+        and the current user is 'foo', then 
+            Get-UserProfilePSModulePathItem 
+        will return 
+            C:\Users\foo\Documents\WindowsPowerShell\Modules
+#>
+function Get-UserProfilePSModulePathItem {
+    param()
+
+    return Get-PSModulePathItem $env:USERPROFILE
+}
+
+<#
+    .SYNOPSIS
+        Returns the first item in $env:PSModulePath that is a path under $env:USERPROFILE.
+        If no items are found, it reports an error.
+    .EXAMPLE
+        If $env:PSModulePath is
+            C:\Program Files\WindowsPowerShell\Modules;C:\Users\foo\Documents\WindowsPowerShell\Modules;C:\Windows\system32\WindowsPowerShell\v1.0\Modules
+        then 
+            Get-PSHomePSModulePathItem 
+        will return 
+            C:\Windows\system32\WindowsPowerShell\v1.0\Modules
+#>
+function Get-PSHomePSModulePathItem {
+    param()
+
+    return Get-PSModulePathItem $global:PSHOME
 }
 
 Export-ModuleMember -Function @(
@@ -976,5 +1015,7 @@ Export-ModuleMember -Function @(
     'Get-SuppressedPSSARuleNameList',
     'Reset-DSC',
     'Install-NugetExe',
-    'Get-PesterDescribeOptInStatus'
+    'Get-PesterDescribeOptInStatus',
+    'Get-UserProfilePSModulePathItem',
+    'Get-PSHomePSModulePathItem'
 )
