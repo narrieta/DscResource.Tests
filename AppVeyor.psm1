@@ -228,7 +228,7 @@ function Invoke-AppveyorTestScriptTask
                     )
                 }
             }
-            $results = & "C:\Program Files\PowerShell\6.0.0-beta.3\powershell.exe" -Command {
+            $results = & "C:\Program Files\PowerShell\6.0.0-beta.4\powershell.exe" -Command {
                 $pesterParameters = @{
                     OutputFormat = 'NUnitXML'
                     OutputFile = "$env:APPVEYOR_BUILD_FOLDER\TestsResults.xml"
