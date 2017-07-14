@@ -931,7 +931,7 @@ function Get-CommandNameParameterValue
     .SYNOPSIS
         Returns first the item in $env:PSModulePath that matches the given Prefix ($env:PSModulePath is list of semicolon-separated items).
         If no items are found, it reports an error.
-    .PARAMS Prefix
+    .PARAMETER Prefix
         Path prefix to look for.
     .NOTES
         If there are multiple matching items, the function returns the first item that occurs in the module path; this matches the lookup 
@@ -976,7 +976,7 @@ function Get-PSModulePathItem {
 function Get-UserProfilePSModulePathItem {
     param()
 
-    return Get-PSModulePathItem $env:USERPROFILE
+    return Get-PSModulePathItem -Prefix $env:USERPROFILE
 }
 
 <#
@@ -994,7 +994,7 @@ function Get-UserProfilePSModulePathItem {
 function Get-PSHomePSModulePathItem {
     param()
 
-    return Get-PSModulePathItem $global:PSHOME
+    return Get-PSModulePathItem -Prefix $global:PSHOME
 }
 
 Export-ModuleMember -Function @(
