@@ -366,6 +366,10 @@ Invoke-AppveyorAfterTestTask `
   to be able to test class-based resources in the folder DscClassResources.
   The new parameter ResourceType can be set to either 'Mof' or 'Class'.
   Default value for parameter ResourceType is 'Mof'.
+* Changed markdown lint rule MD029 to use the 'one' style for ordered lists (issue #115).
+* Removed the reference to the function ConvertTo-SpaceIndentation from the warning
+  message in the test that checks for tabs in module files. The function
+  ConvertTo-SpaceIndentation does not exist anymore ([issue #4](https://github.com/PowerShell/DscResource.Tests/issues/4)).
 
 ### 0.2.0.0
 
